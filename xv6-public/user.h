@@ -24,6 +24,8 @@ int getppid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+void my_yield(void);
+void CPU_share(struct proc*, int);
 
 // ulib.c
 int stat(const char*, struct stat*);

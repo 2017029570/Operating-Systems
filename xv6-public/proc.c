@@ -50,8 +50,8 @@ mycpu(void)
       return &cpus[i];
   }
   panic("unknown apicid\n");
-}
 
+}
 // Disable interrupts so that we are not rescheduled
 // while reading proc from the cpu structure
 struct proc*

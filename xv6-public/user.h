@@ -20,12 +20,13 @@ int mkdir(const char*);
 int chdir(const char*);
 int dup(int);
 int getpid(void);
-int getppid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-void my_yield(void);
-void CPU_share(struct proc*, int);
+int cpu_share(int);
+int run_MLFQ(void);
+int getlev(void);
+void yield(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

@@ -43,6 +43,7 @@
 ./buf.h
 ./spinlock.c
 ./umalloc.c
+./CPU_share.c
 ./main.c
 ./fcntl.h
 ./uart.c

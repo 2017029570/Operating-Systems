@@ -6,10 +6,14 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "rand.h"
 
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
+/*  struct proc* queue[3][NPROC];
+  int qcount[3];
+  unsigned int mlfq_ticket;*/
 } ptable;
 
 static struct proc *initproc;
@@ -50,8 +54,8 @@ mycpu(void)
       return &cpus[i];
   }
   panic("unknown apicid\n");
-
 }
+
 // Disable interrupts so that we are not rescheduled
 // while reading proc from the cpu structure
 struct proc*
@@ -87,6 +91,9 @@ allocproc(void)
 
 found:
   p->state = EMBRYO;
+  p->ticket = INIT_TICKET;
+  p->pass = 0;
+  p->mlfq = 0;
   p->pid = nextpid++;
 
   release(&ptable.lock);
@@ -138,6 +145,7 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
+
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -246,6 +254,9 @@ exit(void)
   iput(curproc->cwd);
   end_op();
   curproc->cwd = 0;
+  if(curproc->mlfq == 1) 
+		  mycpu()->mlfq_ticket -= curproc->ticket;
+
 
   acquire(&ptable.lock);
 
@@ -310,7 +321,20 @@ wait(void)
     sleep(curproc, &ptable.lock);  //DOC: wait-sleep
   }
 }
+int
+total_tickets(void)
+{
+		struct proc *p;
+		int total = 0;
 
+		for(p = ptable.proc;p<&ptable.proc[NPROC];p++) {
+				if(p->state == RUNNABLE) {
+						total += p->ticket;
+				}
+		}
+
+		return total;
+}
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -322,9 +346,17 @@ wait(void)
 void
 scheduler(void)
 {
+
+  int choice = random_at_most(total_tickets());
+  
   struct proc *p;
+  struct proc *min_proc = 0;
+  int min_pass=MAX_TICKET;
+  int ticket_number;
+  cprintf("yes\n");
   struct cpu *c = mycpu();
   c->proc = 0;
+
   
   for(;;){
     // Enable interrupts on this processor.
@@ -332,25 +364,69 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(p = ptable.proc, ticket_number=0; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
-        continue;
+       			 continue;
+	
+	  ticket_number += p->ticket;
+	  if(ticket_number >= choice) 
+			  break;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+	}
 
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
+	if(p->mlfq == 0) {
+		for(p = ptable.proc, min_pass = MAX_TICKET; p < &ptable.proc[NPROC] && p->mlfq == 0; p++) {
+				if(p->state != RUNNABLE) 
+						continue;
+				if(p->pass < min_pass) {
+						  min_pass = p->pass;
+						  min_proc = p;	  
+				 }
+		}
+		if(min_proc) {
+			  min_proc->pass += MAX_TICKET / min_proc->ticket;
+   			  c->proc = min_proc;
+   		  	  switchuvm(min_proc);
+   		  	  min_proc->state = RUNNING;
+	
+    	 	  swtch(&(c->scheduler), min_proc->context);
+     		  switchkvm();
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
-    }
+    	  // Process is done running for now.
+     		 // It should have changed its p->state before coming back.
+     		  c->proc = 0;
+			  min_proc = 0;
+		}
+  
     release(&ptable.lock);
+
+  }
+
+	
+
+	else {
+		int level;
+		for(level = 0; level<3; level++) {
+				while(c->queue[level][0] != 0) {
+					p = c->queue[level][0];
+					for(int index = 0;index<c->qcount[level]; index++) {
+						c->queue[level][index] = c->queue[level][index+1];
+
+
+					}
+					c->qcount[level]--;
+					c->proc = p;
+					switchuvm(p);
+					p->state = RUNNING;
+					swtch(&c->scheduler, p->context);
+					switchkvm();
+					p = 0;
+					c->proc = 0;
+					level = 0;
+				}
+		}
+		release(&ptable.lock);
+	}
 
   }
 }
@@ -532,3 +608,18 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+void
+boost(void)
+{
+		struct cpu *c = mycpu();
+
+		for(int level = 1; level<3; level++) {
+				for(int index = 0; index < c->qcount[level]; index++) {
+						c->queue[0][c->qcount[0]] = c->queue[level][index];
+						c->qcount[0]++;
+				}
+				c->qcount[level] = 0;
+		}
+}
+

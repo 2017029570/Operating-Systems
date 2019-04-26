@@ -1,3 +1,8 @@
+//#define TOTAL_TICKET	1000000
+#define MAX_TICKET	2000
+#define INIT_TICKET	50
+#define CPU_TICKET	10000
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -8,6 +13,9 @@ struct cpu {
   int ncli;                    // Depth of pushcli nesting.
   int intena;                  // Were interrupts enabled before pushcli?
   struct proc *proc;           // The process running on this cpu or null
+  struct proc* queue[3][NPROC];
+  int qcount[3];
+  unsigned int mlfq_ticket;
 };
 
 extern struct cpu cpus[NCPU];
@@ -49,8 +57,9 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  int pass;
-  int ticket;
+  unsigned int ticket;
+  unsigned int pass;
+  int mlfq;
 };
 
 // Process memory is laid out contiguously, low addresses first:

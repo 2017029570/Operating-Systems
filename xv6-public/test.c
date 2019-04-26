@@ -2,12 +2,15 @@
 #include "stat.h"
 #include "user.h"
 
-int main(int argc, char *argv[]) {
-		int ret_val1 = getppid();
-		int ret_val2 = getpid();
+int
+main(int argc, char *argv[]) 
+{
+		int pid = getpid();
 
-		printf(1,"My pid is %d\nMy ppid is %d\n",ret_val2, ret_val1);
-		exit();
+		for(int i=0;i<2;i++) {
+				pid = fork();
+
+				printf(1,"%d\n",pid);
+		}
+	exit();
 }
-
-

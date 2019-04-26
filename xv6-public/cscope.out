@@ -1,4 +1,66 @@
-cscope 15 $HOME/os2019/xv6-public -q 0000001848 0000197831
+cscope 15 $HOME/os2019/xv6-public -q 0000001854 0000198171
+	@CPU_share.c
+
+1 
+	~"ty≥s.h
+"
+
+2 
+	~"defs.h
+"
+
+3 
+	~"mmu.h
+"
+
+5 
+¥oc
+*
+
+6 
+	$CPU_sh¨e
+(
+tickë
+)
+
+8 
+˝u
+ *
+c
+ = 
+	`my˝u
+();
+
+9 
+¥oc
+ *
+p
+ = 
+c
+->proc;
+
+11 if(
+tickë
+ < 
+c
+->
+tickës
+*0.2) {
+
+12 
+p
+->
+tickë
+ =Åicket;
+
+15  
+p
+;
+
+16 
+	}
+}
+
 	@asm.h
 
 5 
@@ -20558,29 +20620,35 @@ i
 
 	@proc.h
 
-2 
+1 
+	#INIT_TICKET
+ 50
+
+	)
+
+4 
 	s˝u
  {
 
-3 
+5 
 uch¨
  
 	m≠icid
 ;
 
-4 
+6 
 c⁄ãxt
  *
 	mscheduÀr
 ;
 
-5 
+7 
 èsk°©e
  
 	mts
 ;
 
-6 
+8 
 £gdesc
  
 	mgdt
@@ -20588,27 +20656,31 @@ c⁄ãxt
 NSEGS
 ];
 
-7 vﬁ©ûê
+9 vﬁ©ûê
 uöt
  
 	m°¨ãd
 ;
 
-8 
+10 
 	mn˛i
 ;
 
-9 
+11 
 	möã«
 ;
 
-10 
+12 
 ¥oc
  *
 	m¥oc
 ;
 
-13 
+13 
+	mtickës
+;
+
+16 
 ˝u
  
 ˝us
@@ -20616,45 +20688,45 @@ uöt
 NCPU
 ];
 
-14 
+17 
 n˝u
 ;
 
-27 
+30 
 	sc⁄ãxt
  {
 
-28 
+31 
 uöt
  
 	medi
 ;
 
-29 
+32 
 uöt
  
 	mesi
 ;
 
-30 
+33 
 uöt
  
 	mebx
 ;
 
-31 
+34 
 uöt
  
 	mebp
 ;
 
-32 
+35 
 uöt
  
 	meù
 ;
 
-35 
+38 
 	e¥oc°©e
  { 
 	mUNUSED
@@ -20670,63 +20742,63 @@ uöt
 	mZOMBIE
  };
 
-38 
+41 
 	s¥oc
  {
 
-39 
+42 
 uöt
  
 	msz
 ;
 
-40 
+43 
 pde_t
 * 
 	mpgdú
 ;
 
-41 *
+44 *
 	mk°ack
 ;
 
-42 
+45 
 ¥oc°©e
  
 	m°©e
 ;
 
-43 
+46 
 	mpid
 ;
 
-44 
+47 
 ¥oc
  *
 	m∑ª¡
 ;
 
-45 
+48 
 å≠‰ame
  *
 	mtf
 ;
 
-46 
+49 
 c⁄ãxt
  *
 	mc⁄ãxt
 ;
 
-47 *
+50 *
 	mch™
 ;
 
-48 
+51 
 	mkûÀd
 ;
 
-49 
+52 
 fûe
  *
 	mofûe
@@ -20734,15 +20806,27 @@ fûe
 NOFILE
 ];
 
-50 
+53 
 öode
  *
 	mcwd
 ;
 
-51 
+54 
 	m«me
 [16];
+
+55 
+	mtickë
+;
+
+56 
+	m∑ss
+;
+
+57 
+	m°ride
+;
 
 	@rm.c
 
@@ -45526,8 +45610,9 @@ ush‹t
 1
 .
 0
-76
-600
+77
+612
+CPU_share.c
 asm.h
 bio.c
 bootasm.S

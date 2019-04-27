@@ -633,12 +633,3 @@ mlfq_ticket(void)
 		return answer;
 }
 
-/*void
-upgradetick(void)
-{
-
-		struct proc *p = myproc();
-		cprintf("%d\n",p->ticket);
-		if(p->mlfq == 1)
-				p->tick += 1;
-}*/

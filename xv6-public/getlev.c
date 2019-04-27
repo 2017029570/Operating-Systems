@@ -9,17 +9,6 @@
 
 int
 getlev(void) {
-/*		struct proc *p = myproc();
-		struct cpu *c = mycpu();
-
-		for(int level = 0; level<3;level++) {
-				for(int index = 0;index < c->qcount[level];index++) {
-						if(c->queue[level][index] == p)
-								return level;
-				}
-		}
-		return -1;*/
-
 		return myproc()->mlfq_level;
 }
 

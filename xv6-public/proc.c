@@ -615,6 +615,7 @@ boost(void)
 {
 		struct proc *p;
 		for(p = ptable.proc;p<&ptable.proc[NPROC];p++) {
+				if(p->state != RUNNABLE) continue;
 				if(p->mlfq == 1)
 						p->mlfq_level = 0;
 						p->tick = 0;
@@ -627,6 +628,7 @@ mlfq_ticket(void)
 		struct proc *p;
 		int answer = 0;
 		for(p = ptable.proc;p<&ptable.proc[NPROC];p++) {
+				if(p->state != RUNNABLE) continue;
 				if(p->mlfq == 1)
 						answer += p->ticket;
 		}

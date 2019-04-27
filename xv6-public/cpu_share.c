@@ -10,7 +10,7 @@
 int
 cpu_share(int ticket) 
 {
-		if(ticket < CPU_TICKET*0.2) {
+		if(total_tickets()+ticket<CPU_TICKET && ticket <= MAX_TICKET) {
 				myproc()->ticket = ticket;
 			//	cprintf("ticket %d\n",myproc()->ticket);
 				return 0;

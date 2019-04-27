@@ -121,7 +121,8 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 void			boost(void);
-
+int 			mlfq_ticket(void);
+int				total_tickets(void);
 // swtch.S
 void            swtch(struct context**, struct context*);
 

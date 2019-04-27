@@ -9,21 +9,19 @@
 
 int
 run_MLFQ(void) {
+
 		struct proc *p = myproc();
-		struct cpu *c = mycpu();
-		
-		c->mlfq_ticket += p->ticket;
-		if(c->mlfq_ticket<MAX_TICKET) {
-			p->mlfq = 1;
-			c->queue[0][c->qcount[0]] = p;
-			c->qcount[0] += 1;
-			return 1;
+		p->mlfq = 1;
+		if(mlfq_ticket() <= 2000) {
+				p->mlfq_level = 0;
+				return 0;
 		}
 
 		else {
-				c->mlfq_ticket -= p->ticket;
+				p->mlfq = 0;
 				return -1;
 		}
+
 }
 
 

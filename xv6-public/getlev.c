@@ -9,7 +9,7 @@
 
 int
 getlev(void) {
-		struct proc *p = myproc();
+/*		struct proc *p = myproc();
 		struct cpu *c = mycpu();
 
 		for(int level = 0; level<3;level++) {
@@ -18,7 +18,9 @@ getlev(void) {
 								return level;
 				}
 		}
-		return -1;
+		return -1;*/
+
+		return myproc()->mlfq_level;
 }
 
 int

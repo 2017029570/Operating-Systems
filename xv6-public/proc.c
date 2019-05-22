@@ -645,23 +645,30 @@ tcreate(void * (*start_routine)(void*), void* arg, void* stack)
 		if((np=allocproc()) == 0) {
 				return -1;
 		}
-		np->pgdir = p->pgdir;
-
+		np->thread = 1;
+		if((np->pgdir = copyuvm(p->pgdir, p->sz)) == 0){
+   			 kfree(np->kstack);
+   			 np->kstack = 0;
+ 		     np->state = UNUSED;
+		    return -1;
+ 		 }
+		//np->pgdir = p->pgdir;
 
 		np->sz = p->sz;
 		np->parent = p;
 		*np->tf = *p->tf;
 
-		np->thread = 1;
-
 		np->tf->eax = 0;
-		np->tf->eip = (uint)start_routine;
-
-		np->tf->esp = (uint)stack + PGSIZE - 4;
+		np->tf->esp = (uint)stack + 4096 - 4;
 		*((uint*)(np->tf->esp)) = (uint)arg;
-		*((uint*)(np->tf->esp-4)) = (uint)start_routine + sizeof(void*);
+		*((uint*)(np->tf->esp-4)) = 0xffffffff;
 		np->tf->esp-=4;
-		np->ustack = (char*)stack;
+
+		
+		np->tf->eip = (uint)start_routine;
+		np->tf->ebp = np->tf->esp;
+
+		np->ustack = stack;
 
 
 		for(i=0;i<NOFILE;i++) {
@@ -691,7 +698,7 @@ join(int tid, void** retval, void** stack)
 		for(;;) {
 				child = 0;
 				for(p=ptable.proc;p<&ptable.proc[NPROC];p++) {
-						if(p->parent!=mproc || 0==p->thread)
+						if(p->parent!=mproc || p->thread == 0)
 								continue;
 						child = 1;
 				
@@ -707,6 +714,8 @@ join(int tid, void** retval, void** stack)
 						p->name[0] = 0;
 						p->killed = 0;
 						p->thread = 0;
+						p->ustack = 0;
+
 						release(&ptable.lock);
         
 						return pid;

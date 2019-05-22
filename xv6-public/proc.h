@@ -62,7 +62,7 @@ struct proc {
   int tick;
 
   int thread;
-  char* ustack;
+  void* ustack;
   
 };
 

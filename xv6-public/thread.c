@@ -15,14 +15,14 @@
 int
 thread_create(thread_t * thread, void * (*start_routine)(void*), void *arg) 
 {
-
-		void *stack;
+		void *stack = 0;
 		if(argptr(1,(void*)&stack, sizeof(*stack))<0) return -1;
 
 		if((uint)stack % PGSIZE) 
 				stack += PGSIZE - ((uint)stack%PGSIZE);
-
+		
 		*thread = tcreate(start_routine, arg, stack);
+		stack = 0;
 		return 0;
 }
 
@@ -30,11 +30,8 @@ int
 thread_join(thread_t thread, void **retval)
 {
 		void *stack;
-		if(join((uint)thread, retval,&stack)<0) {
-				return -1;
-		}
+		return !join((uint)thread, retval, &stack);
 		stack = 0;
-		return 0;
 }
 
 void

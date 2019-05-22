@@ -1,3 +1,4 @@
+#define thread_t	int
 struct buf;
 struct context;
 struct file;
@@ -123,6 +124,9 @@ void            yield(void);
 void			boost(void);
 int 			mlfq_ticket(void);
 int				total_tickets(void);
+int				tcreate(void * (void*), void*, void*);
+int				join(int, void**, void**);
+void			texit(void*);
 // swtch.S
 void            swtch(struct context**, struct context*);
 
@@ -191,5 +195,8 @@ int				cpu_share(int ticket);
 int				run_MLFQ(void);
 int				getlev(void);
 void			yield(void);
+int				thread_create(thread_t*, void*(void*), void*);
+int				thread_join(thread_t, void **);
+void				thread_exit(void*);
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

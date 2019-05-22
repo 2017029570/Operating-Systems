@@ -1,3 +1,4 @@
+#define thread_t int
 struct stat;
 struct rtcdate;
 
@@ -27,6 +28,12 @@ int cpu_share(int);
 int run_MLFQ(void);
 int getlev(void);
 void yield(void);
+//int clone(void*(void*), void*, void*);
+//int join(int, void**,  void**);
+//void texit(void*);
+int	thread_create(thread_t*, void*(void*), void*);
+int thread_join(thread_t, void**);
+void thread_exit(void*);
 
 // ulib.c
 int stat(const char*, struct stat*);

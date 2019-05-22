@@ -2,6 +2,7 @@
 #define MAX_TICKET	200000
 #define INIT_TICKET	50
 #define CPU_TICKET	1000000
+#define thread_t	int
 
 // Per-CPU state
 struct cpu {
@@ -59,6 +60,10 @@ struct proc {
   int mlfq_level;
   int mlfq;
   int tick;
+
+  int thread;
+  char* ustack;
+  
 };
 
 // Process memory is laid out contiguously, low addresses first:

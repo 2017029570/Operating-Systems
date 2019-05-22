@@ -17,11 +17,6 @@ thread_create(thread_t * thread, void * (*start_routine)(void*), void *arg)
 {
 
 		void *stack;
-/*		if((uint)stack <= 0) 
-				return -1;
-		if((uint)stack%PGSIZE) {
-				stack += 4096 - ((uint)stack%PGSIZE);
-		}*/
 		if(argptr(1,(void*)&stack, sizeof(*stack))<0) return -1;
 
 		if((uint)stack % PGSIZE) 
@@ -45,8 +40,6 @@ thread_join(thread_t thread, void **retval)
 void
 thread_exit(void *retval)
 {		
-//		cprintf("exit\n");
-	//	exit();
 		texit(retval);
 }
 
@@ -87,7 +80,6 @@ sys_thread_exit(void)
 		void* retval;
 
 		if(argptr(0,(void*)&retval, sizeof(*retval))<0) {
-//cprintf("%d\n",(int)retval);
 				return -1;
 		}
 

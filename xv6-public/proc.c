@@ -195,6 +195,8 @@ fork(void)
   struct proc *np;
   struct proc *curproc = myproc();
 
+  //if(curproc->thread == 1) curproc = curproc->parent;
+
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
@@ -245,19 +247,37 @@ exit(void)
   if(curproc == initproc)
     panic("init exiting");
 
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		  if(p->pid == curproc->pid) {
   // Close all open files.
-  for(fd = 0; fd < NOFILE; fd++){
-    if(curproc->ofile[fd]){
-      fileclose(curproc->ofile[fd]);
-      curproc->ofile[fd] = 0;
-    }
+			  for(fd = 0; fd < NOFILE; fd++){
+				    if(p->ofile[fd]){
+				      fileclose(p->ofile[fd]);
+				      p->ofile[fd] = 0;
+    				}
+  				}
+
+			  begin_op();
+			  iput(curproc->cwd);
+			  end_op();
+			  p->cwd = 0;
+		  }
+
+		  if(p->thread == 1 && (p->parent == curproc||p->parent == curproc->parent)) {
+				  for(fd = 0; fd < NOFILE; fd++) {
+						  if(p->ofile[fd]) {
+								  fileclose(p->ofile[fd]);
+								  p->ofile[fd] = 0;
+						  }
+				  }
+				  begin_op();
+				  iput(p->cwd);
+				  end_op();
+				  p->cwd = 0;
+		  }
+
   }
-
-  begin_op();
-  iput(curproc->cwd);
-  end_op();
-  curproc->cwd = 0;
-
+  //release(&ptable.lock);
 
   acquire(&ptable.lock);
 
@@ -292,11 +312,27 @@ wait(void)
   for(;;){
     // Scan through table looking for exited children.
     havekids = 0;
+/*	for(p = ptable.proc; p<&ptable.proc[NPROC]; p++) {
+			if(p->parent != 
+			if(p->thread == 1&& p->state == ZOMBIE) {
+					kfree(p->kstack);
+					p->thread = 0;
+					p->name[0] = 0;
+					p->killed = 0;
+					p->parent = 0;
+					p->pass = 0;
+					p->ticket = 0;
+					p->mlfq = 0;
+					p->mlfq_level = -1;
+					p->state = UNUSED;
+			}
+	}
+*/
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->parent != curproc)
         continue;
       havekids = 1;
-      if(p->state == ZOMBIE){
+      if(p->state == ZOMBIE || p->thread == 1){
         // Found one.
         pid = p->pid;
         kfree(p->kstack);
@@ -306,6 +342,11 @@ wait(void)
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
+		p->ticket = 0;
+		p->pass = 0;
+		p->mlfq = 0;
+		p->mlfq_level = -1;
+		p->tick = 0;
         p->state = UNUSED;
         release(&ptable.lock);
         return pid;
@@ -317,6 +358,7 @@ wait(void)
       release(&ptable.lock);
       return -1;
     }
+//  acquire(&ptable.lock);
 
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
     sleep(curproc, &ptable.lock);  //DOC: wait-sleep
@@ -557,6 +599,7 @@ int
 kill(int pid)
 {
   struct proc *p;
+  struct proc *s;
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -565,11 +608,35 @@ kill(int pid)
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
-      release(&ptable.lock);
-      return 0;
+		
+	  
+	  for(s = ptable.proc; s < &ptable.proc[NPROC]; s++) {
+			  if(s->thread == 1 && s->parent == p->parent) { 
+					  s->killed = 1;
+			  			kfree(s->kstack);
+						s->parent = 0;
+						s->pid = 0;
+						s->name[0] = 0;
+						s->thread = 0;
+						s->ustack = 0;
+						s->ticket = 0;
+						s->pass = 0;
+						s->mlfq = 0;
+						s->mlfq_level = -1;
+						s->tick = 0;
+
+			  }
+			  if(s->state == SLEEPING)
+					  s->state = RUNNABLE;
+	  }
+	  release(&ptable.lock);
+	  return 0;
+
     }
   }
+	
   release(&ptable.lock);
+
   return -1;
 }
 
@@ -641,6 +708,7 @@ tcreate(void * (*start_routine)(void*), void* arg, void* stack)
 		int i, pid;
 		struct proc *np;
 		struct proc *p = myproc();
+
 		
 		if((np=allocproc()) == 0) {
 				return -1;
@@ -657,24 +725,27 @@ tcreate(void * (*start_routine)(void*), void* arg, void* stack)
 		np->sz = p->sz;
 		np->parent = p;
 		*np->tf = *p->tf;
+		np->tf->eip = (uint)start_routine;
 
 		np->tf->eax = 0;
 		np->tf->esp = (uint)stack + 4096 - 4;
-		*((uint*)(np->tf->esp)) = (uint)arg;
-		*((uint*)(np->tf->esp-4)) = 0xffffffff;
+		*(uint*)(np->tf->esp) = (uint)arg;
+		*(uint*)(np->tf->esp-4) = 0xffffffff;
 		np->tf->esp-=4;
-
 		
-		np->tf->eip = (uint)start_routine;
+		
 		np->tf->ebp = np->tf->esp;
+//		cprintf("arg : %d\n",*(uint*)(np->tf->ebp));
+
 
 		np->ustack = stack;
 
 
-		for(i=0;i<NOFILE;i++) {
+		for(i=0;i<NOFILE;i++) 
 				if(p->ofile[i])
 						np->ofile[i] = filedup(p->ofile[i]);
-		}
+		np->cwd = idup(p->cwd);
+
 		safestrcpy(np->name, p->name, sizeof(p->name));
 
 		pid = np->pid;
@@ -707,7 +778,7 @@ join(int tid, void** retval, void** stack)
 						*stack = (void*)p->ustack;
 						pid = p->pid;
 						kfree(p->kstack);
-						p->kstack = 0;
+				//		p->kstack = 0;
 						p->state = UNUSED;
 						p->parent = 0;
 						p->pid = 0;
@@ -715,6 +786,11 @@ join(int tid, void** retval, void** stack)
 						p->killed = 0;
 						p->thread = 0;
 						p->ustack = 0;
+						p->ticket = 0;
+						p->pass = 0;
+						p->mlfq = 0;
+						p->mlfq_level = -1;
+						p->tick = 0;
 
 						release(&ptable.lock);
         
@@ -767,6 +843,10 @@ texit(void* retval)
   }
 
   // Jump into the scheduler, never to return.
+  curproc->pass = 0;
+  curproc->ticket = 0;
+  curproc->mlfq = 0;
+  curproc->mlfq_level = -1;
   curproc->tf->eax = (uint)retval;
   curproc->state = ZOMBIE;
   sched();

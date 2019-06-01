@@ -95,7 +95,7 @@ racingthreadmain(void *arg)
     nop();
     gcnt = tmp;
   }
-  printf(1,"%d\n",tid);
+  printf(1, "tid : %d\n",tid);
   thread_exit((void *)(tid+1));
   return 0;
 }

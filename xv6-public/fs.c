@@ -396,7 +396,7 @@ bmap(struct inode *ip, uint bn)
     brelse(bp);
     return addr;
   }
-  //bn -= NINDIRECT;
+  bn -= NINDIRECT;
 
   //double indirect
   if(bn < (NINDIRECT*NINDIRECT)) {
@@ -420,7 +420,7 @@ bmap(struct inode *ip, uint bn)
 		  brelse(bp);
 		  return addr;
 	}
-//  bn -= NINDIRECT*NINDIRECT;
+  bn -= NINDIRECT*NINDIRECT;
 
   //triple indirect
   if(bn < NINDIRECT*NINDIRECT*NINDIRECT) {
@@ -455,7 +455,7 @@ bmap(struct inode *ip, uint bn)
 		  brelse(bp);
 		  return addr;
   }
-		
+  bn -= NINDIRECT*NINDIRECT*NINDIRECT;	
   
 
   panic("bmap: out of range");

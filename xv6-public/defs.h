@@ -87,6 +87,8 @@ void            initlog(int dev);
 void            log_write(struct buf*);
 void            begin_op();
 void            end_op();
+int				fsync(void);
+int 			fget_log_num(void);
 
 // mp.c
 extern int      ismp;
@@ -198,5 +200,7 @@ void			yield(void);
 int				thread_create(thread_t*, void*(void*), void*);
 int				thread_join(thread_t, void **);
 void				thread_exit(void*);
+int				sync(void);
+int				get_log_num(void);
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

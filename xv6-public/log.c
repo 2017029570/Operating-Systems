@@ -130,8 +130,16 @@ begin_op(void)
     if(log.committing){
       sleep(&log, &log.lock);
     } else if(log.lh.n + (log.outstanding+1)*MAXOPBLOCKS > LOGSIZE){
-      // this op might exhaust log space; wait for commit.
-      sleep(&log, &log.lock);
+      // this op might exhaust log space; wait for commit
+			log.committing = 1;
+			release(&log.lock);
+
+			commit();
+
+			acquire(&log.lock);
+			log.committing = 0;
+			wakeup(&log);
+//      sleep(&log, &log.lock);
     } else {
       log.outstanding += 1;
       release(&log.lock);
@@ -145,16 +153,17 @@ begin_op(void)
 void
 end_op(void)
 {
-  int do_commit = 0;
+ // int do_commit = 0;
 
   acquire(&log.lock);
   log.outstanding -= 1;
   if(log.committing)
     panic("log.committing");
-  if(log.outstanding == 0){
+ /* if(log.outstanding == 0){
     do_commit = 1;
     log.committing = 1;
-  } else {
+  }*/
+  if(log.outstanding > 0) {
     // begin_op() may be waiting for log space,
     // and decrementing log.outstanding has decreased
     // the amount of reserved space.
@@ -162,7 +171,7 @@ end_op(void)
   }
   release(&log.lock);
 
-  if(do_commit){
+/*  if(do_commit){
     // call commit w/o holding locks, since not allowed
     // to sleep with locks.
     commit();
@@ -170,7 +179,7 @@ end_op(void)
     log.committing = 0;
     wakeup(&log);
     release(&log.lock);
-  }
+  }*/
 }
 
 // Copy modified blocks from cache to log.
@@ -232,3 +241,29 @@ log_write(struct buf *b)
   release(&log.lock);
 }
 
+int
+fget_log_num(void) 
+{
+		return log.lh.n;
+}
+
+int
+fsync(void) 
+{
+
+		while(log.committing == 1)
+				sleep(&log,&log.lock);
+
+		acquire(&log.lock);
+		log.committing = 1;
+		release(&log.lock);
+
+		commit();
+
+		acquire(&log.lock);
+		log.committing = 0;
+		wakeup(&log);
+		release(&log.lock);
+
+		return 0;
+}
